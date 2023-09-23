@@ -1,6 +1,11 @@
 ﻿namespace Maui.Bluetooth;
 
-public class AppHostBuilderExtensions
+public static class AppHostBuilderExtensions
 {
+    public static MauiAppBuilder UseMauiBluetooth(this MauiAppBuilder builder)
+    {
+        builder.Services.AddTransient<IBluetoothService, BluetoothService>();
 
+        return builder;
+    }
 }

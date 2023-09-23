@@ -7,11 +7,8 @@ public class AppShell : Shell
     public AppShell()
     {
         Shell.SetFlyoutBehavior(this, FlyoutBehavior.Disabled);
-        Items.Add(new ShellContent
-        {
-            Title = "Home",
-            ContentTemplate = new DataTemplate(typeof(MainPage)),
-            Route = "Home"
-        });
+
+        Items.Add(new ShellContent { ContentTemplate = new DataTemplate(typeof(MainPage)) });
+        Routing.RegisterRoute(nameof(MainPage), typeof(MainPage));
     }
 }
