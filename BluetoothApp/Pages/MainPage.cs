@@ -79,14 +79,17 @@ public class MainPage : ContentPage
 			if (device.Name == e.Device.Name)
 			{
 				found = true;
+
+				// underlying object may contain updated info
+				device.OSObject = e.Device.OSObject; 
 				break;
 			}
 		}
 
-		if (!found)
+		if (!found && !string.IsNullOrEmpty(e.Device.Name))
 		{
 			#if DEBUG
-			System.Diagnostics.Debug.WriteLine($"Added Device >>> {e.Device.Name} {e.Device.UUID}");
+			System.Diagnostics.Debug.WriteLine($"Added Device >>> {e.Device.Name}");
 			#endif
 			BTDevices.Add(e.Device);
 		}

@@ -6,7 +6,11 @@ public partial class BluetoothService
     {
     }
 
-    public partial void ConnectTo(string deviceUuid, Action completion)
+    public partial void Connect(BTDevice device)
+    {
+    }
+
+    public partial void Disconnect(BTDevice device)
     {
     }
 

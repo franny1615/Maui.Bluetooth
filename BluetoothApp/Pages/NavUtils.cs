@@ -6,6 +6,11 @@ public class NavUtils
 {
     public static void BTDeviceCardTapped(BTDevice device)
     {
-        // TODO: navigat to new page and try to connect
+        var parameters = new Dictionary<string, object>
+        {
+            { nameof(BTDevice), device }
+        }; 
+
+        Shell.Current.GoToAsync(nameof(DevicePage), parameters);
     }
 }

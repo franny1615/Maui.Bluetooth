@@ -58,12 +58,6 @@ public class BTDeviceCard : ContentView
 			HorizontalTextAlignment = TextAlignment.Start,
 			Text = BTDevice.Name
 		};
-		var uuid = new Label
-		{
-			FontSize = 16,
-			HorizontalTextAlignment = TextAlignment.Start,
-			Text = BTDevice.UUID
-		};
 
 		Content = new Border
 		{
@@ -75,8 +69,7 @@ public class BTDeviceCard : ContentView
 				RowDefinitions = Rows.Define(Star, Auto),
 				Children = 
 				{
-					name.Row(0),
-					uuid.Row(1)
+					name.Row(0)
 				}
 			}
 		}.TapGesture(async () => {

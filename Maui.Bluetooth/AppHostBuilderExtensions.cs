@@ -4,7 +4,7 @@ public static class AppHostBuilderExtensions
 {
     public static MauiAppBuilder UseMauiBluetooth(this MauiAppBuilder builder)
     {
-        builder.Services.AddTransient<IBluetoothService, BluetoothService>();
+        builder.Services.AddSingleton<IBluetoothService, BluetoothService>();
 
         return builder;
     }

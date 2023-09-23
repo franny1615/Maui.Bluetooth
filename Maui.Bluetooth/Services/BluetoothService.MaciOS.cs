@@ -15,8 +15,14 @@ public partial class BluetoothService : NSObject, ICBCentralManagerDelegate
         _centralManager = new CBCentralManager(this, DispatchQueue.MainQueue);
     }
 
-    public partial void ConnectTo(string deviceUuid, Action completion)
+    public partial void Connect(BTDevice device)
     {
+        _centralManager.ConnectPeripheral((CBPeripheral) device.OSObject);
+    }
+
+    public partial void Disconnect(BTDevice device)
+    {
+        _centralManager.CancelPeripheralConnection((CBPeripheral) device.OSObject);
     }
 
     public partial void SearchForDevices()
@@ -70,25 +76,86 @@ public partial class BluetoothService : NSObject, ICBCentralManagerDelegate
             Device = new BTDevice
             {
                 Name = peripheral.Name,
-                UUID = peripheral.Identifier.ToString()
+                OSObject = peripheral
             }
         });
     }
 
     [Foundation.Export("centralManager:didConnectPeripheral:")]
-    public void ConnectedPeripheral (CoreBluetooth.CBCentralManager central, CoreBluetooth.CBPeripheral peripheral) { }
+    public void ConnectedPeripheral (
+        CoreBluetooth.CBCentralManager central, 
+        CoreBluetooth.CBPeripheral peripheral) 
+    {
+        OnDeviceConnected?.Invoke(this, new BluetoothDeviceConnectedArgs
+        {
+            Device = new BTDevice
+            {
+                Name = peripheral.Name,
+                OSObject = peripheral
+            }
+        });
+    }
 
     [Foundation.Export("centralManager:didDisconnectPeripheral:error:")]
-    public void DisconnectedPeripheral (CoreBluetooth.CBCentralManager central, CoreBluetooth.CBPeripheral peripheral, Foundation.NSError error) { }
+    public void DisconnectedPeripheral (
+        CoreBluetooth.CBCentralManager central, 
+        CoreBluetooth.CBPeripheral peripheral, 
+        Foundation.NSError error) 
+    {
+        OnDeviceDisconnected?.Invoke(this, new BluetoothDeviceDisconnectedArgs
+        {
+            Device = new BTDevice
+            {
+                Name = peripheral.Name,
+                OSObject = peripheral
+            }
+        });  
+    }
 
     [Foundation.Export("centralManager:didFailToConnectPeripheral:error:")]
-    public void FailedToConnectPeripheral (CoreBluetooth.CBCentralManager central, CoreBluetooth.CBPeripheral peripheral, Foundation.NSError error) { }
+    public void FailedToConnectPeripheral (
+        CoreBluetooth.CBCentralManager central, 
+        CoreBluetooth.CBPeripheral peripheral, 
+        Foundation.NSError error) 
+    {
+        OnDeviceFailedToConnect?.Invoke(this, new BluetoothDeviceConnectionFailureArgs
+        {
+            Device = new BTDevice
+            {
+                Name = peripheral.Name,
+                OSObject = peripheral
+            },
+            ErrorMessage = error.LocalizedDescription
+        });
+    }
 
     [Foundation.Export("centralManager:didRetrieveConnectedPeripherals:")]
-    public void RetrievedConnectedPeripherals (CoreBluetooth.CBCentralManager central, CoreBluetooth.CBPeripheral[] peripherals) { }
+    public void RetrievedConnectedPeripherals (
+        CoreBluetooth.CBCentralManager central, 
+        CoreBluetooth.CBPeripheral[] peripherals) 
+    {
+        if (peripherals.Length > 0)
+        {
+            List<BTDevice> connectedDevices = new();
+            for (int i = 0; i < peripherals.Length; i++)
+            {
+                connectedDevices.Add(new BTDevice
+                {
+                    Name = peripherals[i].Name,
+                    OSObject = peripherals[i]
+                });
+            }
+            OnRetrivedConnectedDevices?.Invoke(this, new ConnectedBluetoothDevicesArgs
+            {
+                ConnectedDevices = connectedDevices
+            });
+        }
+    }
 
     [Foundation.Export("centralManager:didRetrievePeripherals:")]
-    public void RetrievedPeripherals (CoreBluetooth.CBCentralManager central, CoreBluetooth.CBPeripheral[] peripherals) { }
+    public void RetrievedPeripherals (
+        CoreBluetooth.CBCentralManager central, 
+        CoreBluetooth.CBPeripheral[] peripherals)  { }
 
     [Foundation.Export("centralManager:willRestoreState:")]
     public void WillRestoreState (CoreBluetooth.CBCentralManager central, Foundation.NSDictionary dict) { }

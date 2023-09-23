@@ -10,5 +10,6 @@ public class AppShell : Shell
 
         Items.Add(new ShellContent { ContentTemplate = new DataTemplate(typeof(MainPage)) });
         Routing.RegisterRoute(nameof(MainPage), typeof(MainPage));
+        Routing.RegisterRoute(nameof(DevicePage), typeof(DevicePage));
     }
 }
