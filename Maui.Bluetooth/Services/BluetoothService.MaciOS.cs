@@ -15,12 +15,12 @@ public partial class BluetoothService : NSObject, ICBCentralManagerDelegate
         _centralManager = new CBCentralManager(this, DispatchQueue.MainQueue);
     }
 
-    public partial void Connect(BTDevice device)
+    public partial void Connect(IBTDevice device)
     {
         _centralManager.ConnectPeripheral((CBPeripheral) device.OSObject);
     }
 
-    public partial void Disconnect(BTDevice device)
+    public partial void Disconnect(IBTDevice device)
     {
         _centralManager.CancelPeripheralConnection((CBPeripheral) device.OSObject);
     }
@@ -136,7 +136,7 @@ public partial class BluetoothService : NSObject, ICBCentralManagerDelegate
     {
         if (peripherals.Length > 0)
         {
-            List<BTDevice> connectedDevices = new();
+            List<IBTDevice> connectedDevices = new();
             for (int i = 0; i < peripherals.Length; i++)
             {
                 connectedDevices.Add(new BTDevice

@@ -4,11 +4,11 @@ namespace BluetoothApp.Pages;
 
 public class NavUtils
 {
-    public static void BTDeviceCardTapped(BTDevice device)
+    public static void BTDeviceCardTapped(IBTDevice device)
     {
         var parameters = new Dictionary<string, object>
         {
-            { nameof(BTDevice), device }
+            { nameof(IBTDevice), device }
         }; 
 
         Shell.Current.GoToAsync(nameof(DevicePage), parameters);

@@ -7,28 +7,28 @@ public class BluetoothStateEventArgs : EventArgs
 
 public class BluetoothDeviceDiscoveredArgs : EventArgs
 {
-    public BTDevice Device { get; set; }
+    public IBTDevice Device { get; set; }
 }
 
 public class BluetoothDeviceConnectedArgs : EventArgs
 {
-    public BTDevice Device { get; set; }
+    public IBTDevice Device { get; set; }
 }
 
 public class BluetoothDeviceDisconnectedArgs : EventArgs
 {
-    public BTDevice Device { get; set; }
+    public IBTDevice Device { get; set; }
 }
 
 public class BluetoothDeviceConnectionFailureArgs : EventArgs
 {
-    public BTDevice Device { get; set; }
+    public IBTDevice Device { get; set; }
     public string ErrorMessage { get; set; }
 }
 
 public class ConnectedBluetoothDevicesArgs : EventArgs
 {
-    public List<BTDevice> ConnectedDevices { get; set; }
+    public List<IBTDevice> ConnectedDevices { get; set; }
 }
 
 public enum BluetoothState 
@@ -39,12 +39,6 @@ public enum BluetoothState
     Unauthorized,
     Unknown,
     Unsupported
-}
-
-public class BTDevice 
-{
-    public string Name { get; set; } 
-    public object OSObject { get; set; }
 }
 
 public interface IBluetoothService
@@ -58,8 +52,8 @@ public interface IBluetoothService
 
     public void Prepare();
     public void SearchForDevices();
-    public void Connect(BTDevice device);
-    public void Disconnect(BTDevice device);
+    public void Connect(IBTDevice device);
+    public void Disconnect(IBTDevice device);
 }
 
 public partial class BluetoothService : IBluetoothService
@@ -73,6 +67,6 @@ public partial class BluetoothService : IBluetoothService
 
     public partial void Prepare();
     public partial void SearchForDevices();
-    public partial void Connect(BTDevice device);
-    public partial void Disconnect(BTDevice device);
+    public partial void Connect(IBTDevice device);
+    public partial void Disconnect(IBTDevice device);
 }

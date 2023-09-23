@@ -6,7 +6,7 @@ namespace BluetoothApp.Pages;
 public class DevicePage : ContentPage, IQueryAttributable
 {
 	private readonly IBluetoothService _bluetoothService;
-	private BTDevice _btDevice;
+	private IBTDevice _btDevice;
 
 	private Label _deviceNameLabel = new()
 	{
@@ -116,9 +116,9 @@ public class DevicePage : ContentPage, IQueryAttributable
 
     public void ApplyQueryAttributes(IDictionary<string, object> query)
     {
-        if (query.ContainsKey(nameof(BTDevice)))
+        if (query.ContainsKey(nameof(IBTDevice)))
 		{
-			_btDevice = (BTDevice)query[nameof(BTDevice)];
+			_btDevice = (IBTDevice)query[nameof(IBTDevice)];
 			_deviceNameLabel.Text = _btDevice.Name;
 		}
     }

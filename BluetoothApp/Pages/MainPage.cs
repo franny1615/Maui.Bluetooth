@@ -10,7 +10,7 @@ namespace BluetoothApp.Pages;
 
 public class MainPage : ContentPage
 {
-	public ObservableCollection<BTDevice> BTDevices { get; set; } = new();
+	public ObservableCollection<IBTDevice> BTDevices { get; set; } = new();
 	private readonly IBluetoothService _bluetoothService;
 
 	private CollectionView _devicesList = new()
