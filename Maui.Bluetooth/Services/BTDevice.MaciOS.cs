@@ -8,7 +8,13 @@ public partial class BTDevice : NSObject, ICBPeripheralDelegate
     public partial void DiscoverCharacteristics()
     {
         CBPeripheral peripheral = (CBPeripheral)OSObject;
-        peripheral.DiscoverCharacteristics(null);
+        if (peripheral.Services != null)
+        {
+            foreach(var service in peripheral.Services)
+            {
+                peripheral.DiscoverCharacteristics(service);
+            }
+        }
     }
     
     public partial void DiscoverServices()
@@ -22,7 +28,34 @@ public partial class BTDevice : NSObject, ICBPeripheralDelegate
     {
         OnDiscoveredDeviceService?.Invoke(this, new DiscoveredServiceArgs
         {
-
+            BluetoothDeviceObject = peripheral,
         });
+    }
+
+    [Foundation.Export("peripheral:didDiscoverCharacteristicsForService:error:")]
+    public void DiscoveredCharacteristic (
+        CoreBluetooth.CBPeripheral peripheral, 
+        CoreBluetooth.CBService service, 
+        Foundation.NSError error)
+    {
+        OnDiscoveredCharacteristics?.Invoke(this, new DiscoveredCharacteristicsArgs
+        {
+            BluetoothDeviceObject = peripheral
+        });
+    }
+
+    public partial bool HasCharacteristicWithUUID(string uuid)
+    {
+        return false;
+    }
+
+    public partial byte[] ReadDataFromCharacteristicWithUUID(string uuid)
+    {
+        return new byte[0];
+    }
+
+    public partial void SendDataToCharacteristicWithUUID(string uuid, byte[] data)
+    {
+
     }
 }

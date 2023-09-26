@@ -86,6 +86,23 @@ public class DevicePage : ContentPage, IQueryAttributable
 		System.Diagnostics.Debug.WriteLine($"{e.Device.Name} has been connected");
 		#endif
 		_connectionStatus.Text = "Connected";
+		_btDevice = e.Device;
+		_btDevice.OnDiscoveredDeviceService += DiscoveredDeviceService;
+		_btDevice.OnDiscoveredCharacteristics += DiscoveredCharacteristics;
+		_btDevice.DiscoverServices();
+	}
+
+	private void DiscoveredDeviceService(object sender, DiscoveredServiceArgs e)
+	{
+		_btDevice.OSObject = e.BluetoothDeviceObject;
+		_btDevice.DiscoverCharacteristics();
+	}
+
+	private void DiscoveredCharacteristics(object sender, DiscoveredCharacteristicsArgs e)
+	{
+		_btDevice.OSObject = e.BluetoothDeviceObject;
+		// TODO: ask device if it contains some uuid characteristic, if so,
+		// read its data, set some flag, and then see if you can send some data to it. 
 	}
 
 	private void FailedToConnectDevice(object sender, BluetoothDeviceConnectionFailureArgs e)
@@ -102,6 +119,11 @@ public class DevicePage : ContentPage, IQueryAttributable
 		System.Diagnostics.Debug.WriteLine($"{e.Device.Name} has been disconnected");
 		#endif
 		_connectionStatus.Text = $"Disconnected";
+		if (_btDevice != null)
+		{
+			_btDevice.OnDiscoveredDeviceService -= DiscoveredDeviceService;
+			_btDevice.OnDiscoveredCharacteristics -= DiscoveredCharacteristics;
+		}
 	}
 
     protected override void OnDisappearing()
@@ -112,6 +134,11 @@ public class DevicePage : ContentPage, IQueryAttributable
 		_bluetoothService.OnDeviceConnected -= DeviceConnected;
 		_bluetoothService.OnDeviceFailedToConnect -= FailedToConnectDevice;
 		_bluetoothService.OnDeviceDisconnected -= DeviceDisconnected;
+		if (_btDevice != null)
+		{
+			_btDevice.OnDiscoveredDeviceService -= DiscoveredDeviceService;
+			_btDevice.OnDiscoveredCharacteristics -= DiscoveredCharacteristics;
+		}
     }
 
     public void ApplyQueryAttributes(IDictionary<string, object> query)

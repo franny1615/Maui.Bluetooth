@@ -11,4 +11,19 @@ public partial class BTDevice
     {
 
     }
+
+    public partial bool HasCharacteristicWithUUID(string uuid)
+    {
+        return false;
+    }
+
+    public partial byte[] ReadDataFromCharacteristicWithUUID(string uuid)
+    {
+        return new byte[0];
+    }
+
+    public partial void SendDataToCharacteristicWithUUID(string uuid, byte[] data)
+    {
+        
+    }
 }
