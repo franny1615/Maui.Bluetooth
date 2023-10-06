@@ -21,7 +21,7 @@ public partial class BTDevice
     {
     }
 
-    public partial void SendDataToCharacteristicWithUUID(string uuid, byte[] data)
+    public partial void SendDataToCharacteristicWithUUID(string uuid, byte[] data, Action<byte[]> completion)
     {
         
     }

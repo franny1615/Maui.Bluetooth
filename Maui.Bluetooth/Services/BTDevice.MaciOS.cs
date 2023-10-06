@@ -1,13 +1,12 @@
-﻿using AVFoundation;
-using CoreBluetooth;
+﻿using CoreBluetooth;
 using Foundation;
-using System;
 
 namespace Maui.Bluetooth;
 
 public partial class BTDevice : NSObject, ICBPeripheralDelegate
 {
     private Action<byte[]> _readCharecteristicCompletion;
+    private Action<byte[]> _writeCharecteristicCompletion;
 
     public partial void DiscoverCharacteristics()
     {
@@ -105,6 +104,10 @@ public partial class BTDevice : NSObject, ICBPeripheralDelegate
         {
             _readCharecteristicCompletion?.Invoke(characteristic.Value.ToArray());
         }
+        else
+        {
+            _readCharecteristicCompletion?.Invoke(new byte[] {});
+        }
     }
 
     [Foundation.Export("peripheral:didUpdateValueForDescriptor:error:")]
@@ -115,8 +118,35 @@ public partial class BTDevice : NSObject, ICBPeripheralDelegate
     {
     }
 
-    public partial void SendDataToCharacteristicWithUUID(string uuid, byte[] data)
+    public partial void SendDataToCharacteristicWithUUID(string uuid, byte[] data, Action<byte[]> completion)
     {
+        CBPeripheral peripheral = (CBPeripheral) OSObject;
+        peripheral.Delegate = this;
+        CBCharacteristic characteristic = null;
 
+        foreach (CBService service in peripheral.Services)
+        {
+            foreach (CBCharacteristic charc in service.Characteristics)
+            {
+                if (charc.UUID.Uuid.ToLower() == uuid.ToLower())
+                {
+                    characteristic = charc;
+                }
+            }
+        }
+
+        _writeCharecteristicCompletion = completion;
+        peripheral.WriteValue(NSData.FromArray(data), characteristic, CBCharacteristicWriteType.WithResponse);
+    }
+
+    [Foundation.Export("peripheral:didWriteValueForCharacteristic:error:")]
+    public virtual void WroteCharacteristicValue(
+        CoreBluetooth.CBPeripheral peripheral, 
+        CoreBluetooth.CBCharacteristic characteristic, 
+        Foundation.NSError error)
+    {
+        peripheral.Delegate = this;
+        peripheral.ReadValue(characteristic);
+        _readCharecteristicCompletion = _writeCharecteristicCompletion;
     }
 }

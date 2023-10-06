@@ -21,7 +21,7 @@ public interface IBTDevice
     public void DiscoverCharacteristics();
     public bool HasCharacteristicWithUUID(string uuid);
     public void ReadDataFromCharacteristicWithUUID(string uuid, Action<byte[]> completion);
-    public void SendDataToCharacteristicWithUUID(string uuid, byte[] data);
+    public void SendDataToCharacteristicWithUUID(string uuid, byte[] data, Action<byte[]> completion);
 }
 
 public partial class BTDevice : IBTDevice
@@ -36,5 +36,5 @@ public partial class BTDevice : IBTDevice
     public partial void DiscoverServices(string[] serviceUUIDs);
     public partial bool HasCharacteristicWithUUID(string uuid);
     public partial void ReadDataFromCharacteristicWithUUID(string uuid, Action<byte[]> completion);
-    public partial void SendDataToCharacteristicWithUUID(string uuid, byte[] data);
+    public partial void SendDataToCharacteristicWithUUID(string uuid, byte[] data, Action<byte[]> completion);
 }

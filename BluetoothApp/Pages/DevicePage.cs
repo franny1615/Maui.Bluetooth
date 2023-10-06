@@ -1,4 +1,3 @@
-
 using Maui.Bluetooth;
 using System.Text;
 
@@ -46,6 +45,19 @@ public class DevicePage : ContentPage, IQueryAttributable
 		FontSize = 32
 	};
 
+	private Entry _changeDataEntry = new()
+	{
+		Placeholder = "Enter data to send to device",
+		FontSize = 24
+	};
+	private Button _sendDataButton = new()
+	{
+        Text = "Update Value",
+        TextColor = Colors.White,
+        BackgroundColor = Colors.Orange,
+        FontSize = 24
+    };
+
 	public DevicePage(IBluetoothService bluetoothService)
 	{
 		Title = "Device Information";
@@ -61,7 +73,9 @@ public class DevicePage : ContentPage, IQueryAttributable
 				_connectionStatus,
 				_connectButton,
 				_disconnectButton,
-				_dataLabel
+				_dataLabel,
+				_changeDataEntry,
+				_sendDataButton
 			}
 		};
 	}
@@ -71,12 +85,13 @@ public class DevicePage : ContentPage, IQueryAttributable
         base.OnAppearing();
 		_connectButton.Clicked += ConnectButtonClicked;
 		_disconnectButton.Clicked += DisconnectButtonClicked;
+        _sendDataButton.Clicked += SendDataClicked;
 		_bluetoothService.OnDeviceConnected += DeviceConnected;
 		_bluetoothService.OnDeviceFailedToConnect += FailedToConnectDevice;
 		_bluetoothService.OnDeviceDisconnected += DeviceDisconnected;
     }
 
-	private void ConnectButtonClicked(object sender, EventArgs e)
+    private void ConnectButtonClicked(object sender, EventArgs e)
 	{
 		_bluetoothService.Connect(_btDevice);
 		_connectionStatus.Text = "Connecting...";
@@ -88,7 +103,19 @@ public class DevicePage : ContentPage, IQueryAttributable
 		_connectionStatus.Text = "Disconnecting...";
 	}
 
-	private void DeviceConnected(object sender, BluetoothDeviceConnectedArgs e)
+    private void SendDataClicked(object sender, EventArgs e)
+    {
+		_btDevice.SendDataToCharacteristicWithUUID(
+			"beb5483e-36e1-4688-b7f5-ea07361b26a8", 
+			Encoding.UTF8.GetBytes(_changeDataEntry.Text),
+			(data) =>
+			{
+				var textWritten = Encoding.UTF8.GetString(data, 0, data.Length);
+				_dataLabel.Text = $"Wrote: {textWritten}";
+            });
+    }
+
+    private void DeviceConnected(object sender, BluetoothDeviceConnectedArgs e)
 	{
 		#if DEBUG
 		System.Diagnostics.Debug.WriteLine($"{e.Device.Name} has been connected");
