@@ -1,5 +1,6 @@
 
 using Maui.Bluetooth;
+using System.Text;
 
 namespace BluetoothApp.Pages;
 
@@ -39,6 +40,12 @@ public class DevicePage : ContentPage, IQueryAttributable
 		FontSize = 24
 	};
 
+	private Label _dataLabel = new()
+	{
+		Text = "Data has not been read yet",
+		FontSize = 32
+	};
+
 	public DevicePage(IBluetoothService bluetoothService)
 	{
 		Title = "Device Information";
@@ -53,7 +60,8 @@ public class DevicePage : ContentPage, IQueryAttributable
 				_deviceNameLabel,
 				_connectionStatus,
 				_connectButton,
-				_disconnectButton
+				_disconnectButton,
+				_dataLabel
 			}
 		};
 	}
@@ -89,7 +97,7 @@ public class DevicePage : ContentPage, IQueryAttributable
 		_btDevice = e.Device;
 		_btDevice.OnDiscoveredDeviceService += DiscoveredDeviceService;
 		_btDevice.OnDiscoveredCharacteristics += DiscoveredCharacteristics;
-		_btDevice.DiscoverServices();
+		_btDevice.DiscoverServices(new string[] { "4fafc201-1fb5-459e-8fcc-c5c9c331914b" });
 	}
 
 	private void DiscoveredDeviceService(object sender, DiscoveredServiceArgs e)
@@ -101,8 +109,16 @@ public class DevicePage : ContentPage, IQueryAttributable
 	private void DiscoveredCharacteristics(object sender, DiscoveredCharacteristicsArgs e)
 	{
 		_btDevice.OSObject = e.BluetoothDeviceObject;
-		// TODO: ask device if it contains some uuid characteristic, if so,
-		// read its data, set some flag, and then see if you can send some data to it. 
+		if (_btDevice.HasCharacteristicWithUUID("beb5483e-36e1-4688-b7f5-ea07361b26a8"))
+		{
+			_btDevice.ReadDataFromCharacteristicWithUUID("beb5483e-36e1-4688-b7f5-ea07361b26a8", (data) =>
+			{
+				MainThread.BeginInvokeOnMainThread(() =>
+				{
+					_dataLabel.Text = Encoding.UTF8.GetString(data, 0, data.Length);
+				});
+			});
+		}
 	}
 
 	private void FailedToConnectDevice(object sender, BluetoothDeviceConnectionFailureArgs e)

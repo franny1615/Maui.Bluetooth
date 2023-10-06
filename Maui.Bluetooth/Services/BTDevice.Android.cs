@@ -7,7 +7,7 @@ public partial class BTDevice
 
     }
     
-    public partial void DiscoverServices()
+    public partial void DiscoverServices(string[] serviceUUIDs)
     {
 
     }
@@ -17,9 +17,8 @@ public partial class BTDevice
         return false;
     }
 
-    public partial byte[] ReadDataFromCharacteristicWithUUID(string uuid)
+    public partial void ReadDataFromCharacteristicWithUUID(string uuid, Action<byte[]> completion)
     {
-        return new byte[0];
     }
 
     public partial void SendDataToCharacteristicWithUUID(string uuid, byte[] data)

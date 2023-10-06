@@ -17,10 +17,10 @@ public interface IBTDevice
     public string Name { get; set; } 
     public object OSObject { get; set; }
 
-    public void DiscoverServices();
+    public void DiscoverServices(string[] serviceUUIDs);
     public void DiscoverCharacteristics();
     public bool HasCharacteristicWithUUID(string uuid);
-    public byte[] ReadDataFromCharacteristicWithUUID(string uuid);
+    public void ReadDataFromCharacteristicWithUUID(string uuid, Action<byte[]> completion);
     public void SendDataToCharacteristicWithUUID(string uuid, byte[] data);
 }
 
@@ -33,8 +33,8 @@ public partial class BTDevice : IBTDevice
     public event EventHandler<DiscoveredCharacteristicsArgs> OnDiscoveredCharacteristics;
 
     public partial void DiscoverCharacteristics();
-    public partial void DiscoverServices();
+    public partial void DiscoverServices(string[] serviceUUIDs);
     public partial bool HasCharacteristicWithUUID(string uuid);
-    public partial byte[] ReadDataFromCharacteristicWithUUID(string uuid);
+    public partial void ReadDataFromCharacteristicWithUUID(string uuid, Action<byte[]> completion);
     public partial void SendDataToCharacteristicWithUUID(string uuid, byte[] data);
 }
