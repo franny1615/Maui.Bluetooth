@@ -48,9 +48,9 @@ public class MainPage : ContentPage
     protected override void OnAppearing()
     {
         base.OnAppearing();
-		_bluetoothService.Prepare();
 		_bluetoothService.OnBluetoothStateChanged += BTStateChanged;
 		_bluetoothService.OnDeviceDiscovered += BTDeviceDiscoverd;
+		_bluetoothService.Prepare();
     }
 
     protected override void OnDisappearing()
