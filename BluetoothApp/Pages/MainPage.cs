@@ -55,9 +55,10 @@ public class MainPage : ContentPage
 
     protected override void OnDisappearing()
     {
-        base.OnDisappearing();
 		_bluetoothService.OnBluetoothStateChanged -= BTStateChanged;
 		_bluetoothService.OnDeviceDiscovered -= BTDeviceDiscoverd;
+        _bluetoothService.Stop();
+        base.OnDisappearing();
     }
 
     private void BTStateChanged(object sender, BluetoothStateEventArgs e)

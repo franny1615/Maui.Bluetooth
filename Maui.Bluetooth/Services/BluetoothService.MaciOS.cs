@@ -15,6 +15,11 @@ public partial class BluetoothService : NSObject, ICBCentralManagerDelegate
         _centralManager = new CBCentralManager(this, DispatchQueue.MainQueue);
     }
 
+    public partial void Stop()
+    {
+        // TODO: find any cleanup that needs to be done iOS when service is done being used.
+    }
+
     public partial void Connect(IBTDevice device)
     {
         _centralManager.ConnectPeripheral((CBPeripheral) device.OSObject);

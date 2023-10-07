@@ -51,6 +51,7 @@ public interface IBluetoothService
     public event EventHandler<ConnectedBluetoothDevicesArgs> OnRetrivedConnectedDevices;
 
     public void Prepare();
+    public void Stop();
     public void SearchForDevices();
     public void Connect(IBTDevice device);
     public void Disconnect(IBTDevice device);
@@ -66,6 +67,7 @@ public partial class BluetoothService : IBluetoothService
     public event EventHandler<ConnectedBluetoothDevicesArgs> OnRetrivedConnectedDevices;
 
     public partial void Prepare();
+    public partial void Stop();
     public partial void SearchForDevices();
     public partial void Connect(IBTDevice device);
     public partial void Disconnect(IBTDevice device);

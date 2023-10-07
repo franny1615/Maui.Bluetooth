@@ -182,7 +182,6 @@ public class DevicePage : ContentPage, IQueryAttributable
 
     protected override void OnDisappearing()
     {
-        base.OnDisappearing();
 		_connectButton.Clicked -= ConnectButtonClicked;
 		_disconnectButton.Clicked -= DisconnectButtonClicked;
 		_bluetoothService.OnDeviceConnected -= DeviceConnected;
@@ -193,6 +192,8 @@ public class DevicePage : ContentPage, IQueryAttributable
 			_btDevice.OnDiscoveredDeviceService -= DiscoveredDeviceService;
 			_btDevice.OnDiscoveredCharacteristics -= DiscoveredCharacteristics;
 		}
+		_bluetoothService.Stop();
+        base.OnDisappearing();
     }
 
     public void ApplyQueryAttributes(IDictionary<string, object> query)
