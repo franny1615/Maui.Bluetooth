@@ -56,41 +56,18 @@ public partial class BTDevice : NSObject, ICBPeripheralDelegate
 
     public partial bool HasCharacteristicWithUUID(string uuid)
     {
-        CBPeripheral peripheral = (CBPeripheral) OSObject;
-        
-        foreach(CBService service in peripheral.Services)
-        {
-            foreach(CBCharacteristic characteristic in service.Characteristics)
-            {
-                if (characteristic.UUID.Uuid.ToLower() == uuid.ToLower())
-                {
-                    return true;
-                }
-            }
-        }
+        CBPeripheral peripheral = (CBPeripheral)OSObject;
+        var characteristic = GetCharacteristic(uuid, peripheral);
 
-        return false;
+        return characteristic != null;
     }
 
     public partial void ReadDataFromCharacteristicWithUUID(string uuid, Action<byte[]> completion)
     {
-        CBPeripheral peripheral = (CBPeripheral) OSObject;
-        peripheral.Delegate = this;
+        CBPeripheral peripheral = (CBPeripheral)OSObject;
+        var characteristic = GetCharacteristic(uuid, peripheral);
 
-        CBCharacteristic characteristic = null;
         _readCharecteristicCompletion = completion;
-
-        foreach (CBService service in peripheral.Services)
-        {
-            foreach (CBCharacteristic charc in service.Characteristics)
-            {
-                if (charc.UUID.Uuid.ToLower() == uuid.ToLower())
-                {
-                    characteristic = charc;
-                }
-            }
-        }
-
         peripheral.ReadValue(characteristic);
     }
 
@@ -114,26 +91,12 @@ public partial class BTDevice : NSObject, ICBPeripheralDelegate
     public virtual void UpdatedValue(
         CoreBluetooth.CBPeripheral peripheral, 
         CoreBluetooth.CBDescriptor descriptor, 
-        Foundation.NSError error)
-    {
-    }
+        Foundation.NSError error) { }
 
     public partial void SendDataToCharacteristicWithUUID(string uuid, byte[] data, Action<byte[]> completion)
     {
-        CBPeripheral peripheral = (CBPeripheral) OSObject;
-        peripheral.Delegate = this;
-        CBCharacteristic characteristic = null;
-
-        foreach (CBService service in peripheral.Services)
-        {
-            foreach (CBCharacteristic charc in service.Characteristics)
-            {
-                if (charc.UUID.Uuid.ToLower() == uuid.ToLower())
-                {
-                    characteristic = charc;
-                }
-            }
-        }
+        CBPeripheral peripheral = (CBPeripheral)OSObject;
+        var characteristic = GetCharacteristic(uuid, peripheral);
 
         _writeCharecteristicCompletion = completion;
         peripheral.WriteValue(NSData.FromArray(data), characteristic, CBCharacteristicWriteType.WithResponse);
@@ -149,4 +112,45 @@ public partial class BTDevice : NSObject, ICBPeripheralDelegate
         peripheral.ReadValue(characteristic);
         _readCharecteristicCompletion = _writeCharecteristicCompletion;
     }
+
+    public partial void SubscribeToCharacteristicWithUUID(string uuid)
+    {
+        CBPeripheral peripheral = (CBPeripheral)OSObject;
+        var characteristic = GetCharacteristic(uuid, peripheral);
+        peripheral.SetNotifyValue(true, characteristic);
+    }
+
+    [Foundation.Export("peripheral:didUpdateNotificationStateForCharacteristic:error:")]
+    public virtual void UpdatedNotificationState(
+        CoreBluetooth.CBPeripheral peripheral, 
+        CoreBluetooth.CBCharacteristic characteristic, 
+        Foundation.NSError error)
+    {
+        OnCharacteristicPostedNotification?.Invoke(this, new CharacteristicPostedNotificationArgs
+        {
+            CharacteristicUUID = characteristic.UUID.Uuid,
+            Data = characteristic.Value?.ToArray()
+        });
+    }
+
+    #region Utilities
+    private CBCharacteristic GetCharacteristic(string uuid, CBPeripheral peripheral)
+    {
+        peripheral.Delegate = this;
+        CBCharacteristic characteristic = null;
+
+        foreach (CBService service in peripheral.Services)
+        {
+            foreach (CBCharacteristic charc in service.Characteristics)
+            {
+                if (charc.UUID.Uuid.ToLower() == uuid.ToLower())
+                {
+                    characteristic = charc;
+                }
+            }
+        }
+
+        return characteristic;
+    }
+    #endregion
 }

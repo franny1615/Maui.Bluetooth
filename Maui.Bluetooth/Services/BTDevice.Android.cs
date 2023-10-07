@@ -25,4 +25,6 @@ public partial class BTDevice
     {
         
     }
+
+    public partial void SubscribeToCharacteristicWithUUID(string uuid) { }
 }

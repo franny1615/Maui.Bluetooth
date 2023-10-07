@@ -124,10 +124,19 @@ public class DevicePage : ContentPage, IQueryAttributable
 		_btDevice = e.Device;
 		_btDevice.OnDiscoveredDeviceService += DiscoveredDeviceService;
 		_btDevice.OnDiscoveredCharacteristics += DiscoveredCharacteristics;
+        _btDevice.OnCharacteristicPostedNotification += CharacteristicPostedNotification;
 		_btDevice.DiscoverServices(new string[] { "4fafc201-1fb5-459e-8fcc-c5c9c331914b" });
 	}
 
-	private void DiscoveredDeviceService(object sender, DiscoveredServiceArgs e)
+    private void CharacteristicPostedNotification(object sender, CharacteristicPostedNotificationArgs e)
+    {
+		MainThread.BeginInvokeOnMainThread(() =>
+		{
+			_dataLabel.Text = $"Got Notification, data >>> {Encoding.UTF8.GetString(e.Data)}";
+		});
+    }
+
+    private void DiscoveredDeviceService(object sender, DiscoveredServiceArgs e)
 	{
 		_btDevice.OSObject = e.BluetoothDeviceObject;
 		_btDevice.DiscoverCharacteristics();
@@ -145,6 +154,7 @@ public class DevicePage : ContentPage, IQueryAttributable
 					_dataLabel.Text = Encoding.UTF8.GetString(data, 0, data.Length);
 				});
 			});
+			_btDevice.SubscribeToCharacteristicWithUUID("beb5483e-36e1-4688-b7f5-ea07361b26a8");
 		}
 	}
 
@@ -166,6 +176,7 @@ public class DevicePage : ContentPage, IQueryAttributable
 		{
 			_btDevice.OnDiscoveredDeviceService -= DiscoveredDeviceService;
 			_btDevice.OnDiscoveredCharacteristics -= DiscoveredCharacteristics;
+			_btDevice.OnCharacteristicPostedNotification -= CharacteristicPostedNotification;
 		}
 	}
 
