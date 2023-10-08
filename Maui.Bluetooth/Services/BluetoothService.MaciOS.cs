@@ -17,7 +17,7 @@ public partial class BluetoothService : NSObject, ICBCentralManagerDelegate
 
     public partial void Stop()
     {
-        // TODO: find any cleanup that needs to be done iOS when service is done being used.
+        _centralManager.StopScan();
     }
 
     public partial void Connect(IBTDevice device)
