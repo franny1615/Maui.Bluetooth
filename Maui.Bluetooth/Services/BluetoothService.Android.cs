@@ -3,13 +3,11 @@ using Android.App;
 using Android.Bluetooth;
 using Android.Content;
 using Android.Content.PM;
-using Android.OS;
-using Android.Runtime;
-using Android.Widget;
-using AndroidX.AppCompat.App;
-using AndroidX.Core.App;
+using AndroidX.Activity.Result;
+using AndroidX.Activity.Result.Contract;
 using AndroidX.Core.Content;
-using Java.Lang.Ref;
+using Java.Util;
+using Microsoft.Maui.Platform;
 
 namespace Maui.Bluetooth;
 
@@ -164,11 +162,21 @@ public class Receiver : BroadcastReceiver
         string action = intent.Action;
         if (action == BluetoothDevice.ActionFound)
         {
-            BluetoothDevice device = (BluetoothDevice) intent.GetParcelableExtra(BluetoothDevice.ExtraDevice);
-            if (device != null)
+            if (OperatingSystem.IsAndroidVersionAtLeast(33))
             {
-                ReceivedDevice?.Invoke(new BTDevice 
-                { 
+                if (intent.GetParcelableExtra(BluetoothDevice.ExtraDevice, Java.Lang.Class.FromType(typeof(BluetoothDevice))) is BluetoothDevice device)
+                {
+                    ReceivedDevice?.Invoke(new BTDevice
+                    {
+                        OSObject = device,
+                        Name = device.Name,
+                    });
+                }
+            }
+            else if (intent.GetParcelableExtra(BluetoothDevice.ExtraDevice) is BluetoothDevice device)
+            {
+                ReceivedDevice?.Invoke(new BTDevice
+                {
                     OSObject = device,
                     Name = device.Name,
                 });
@@ -183,30 +191,36 @@ public static class PermissionsRequester
         string[] permissions, 
         Action<string[], Permission[]> completion)
     {
-        Fragment frag = new PermissionsFragment(
+        var frag = new PermissionsFragment(
             permissions: permissions,
             requestPermissionResult: completion);
-        FragmentTransaction transaction = Platform.CurrentActivity.FragmentManager.BeginTransaction();
-        transaction.Add(frag, null).Commit();
+        Platform.CurrentActivity
+            .GetFragmentManager()
+            .BeginTransaction()
+            .Add(frag, null)
+            .Commit();
     }
 
     public static void RequestBluetoothAdapterEnable(Action<bool> completion)
     {
-        Fragment frag = new PermissionsFragment(enableBluetoothAdapterResult: completion);
-        FragmentTransaction transaction = Platform.CurrentActivity.FragmentManager.BeginTransaction();
-        transaction.Add(frag, null).Commit();
+        var frag = new PermissionsFragment(enableBluetoothAdapterResult: completion);
+        Platform.CurrentActivity
+            .GetFragmentManager()
+            .BeginTransaction()
+            .Add(frag, null)
+            .Commit();
     }
 }
 
-public class PermissionsFragment : Fragment
+public class PermissionsFragment : AndroidX.Fragment.App.Fragment
 {
     public const string PERMISSIONS_KEY = "kRequestPermissions";
-    private const int PERMISSIONS_REQUEST = 6969;
-    private const int ENABLE_BT_REQUEST = 12531;
 
     private Action<bool> _enableBluetoothAdapterResult = null;
     private Action<string[], Permission[]> _requestedPermissionResult = null;
     private string[] _permissions = null;
+
+    private ActivityResultLauncher _permissionLauncher;
 
     public PermissionsFragment(
         string[] permissions = null, 
@@ -218,39 +232,89 @@ public class PermissionsFragment : Fragment
         _permissions = permissions;
     }
 
-    public override void OnAttach(Activity activity)
+    public override void OnAttach(Context context)
     {
-        base.OnAttach(activity);
+        base.OnAttach(context);
+
         if (_permissions != null && _permissions.Length > 0)
         {
-            RequestPermissions(_permissions, PERMISSIONS_REQUEST);
+            _permissionLauncher = RegisterForActivityResult(
+                new ActivityResultContracts.RequestMultiplePermissions(),
+                new ResultCallback
+                {
+                    Completion = (result) =>
+                    {
+                        if (result is HashMap map)
+                        {
+                            DealWithPermissionRequestResult(map);
+                        }
+
+                        Activity
+                            .GetFragmentManager()
+                            .BeginTransaction()
+                            .Remove(this)
+                            .Commit();
+                    }
+                });
+
+            _permissionLauncher.Launch(_permissions);
         }
         else if (_enableBluetoothAdapterResult != null)
         {
+            _permissionLauncher = RegisterForActivityResult(
+                new ActivityResultContracts.StartActivityForResult(),
+                new ResultCallback
+                {
+                    Completion = (result) =>
+                    {
+                        if (result is AndroidX.Activity.Result.ActivityResult res)
+                        {
+                            _enableBluetoothAdapterResult?.Invoke(res.ResultCode == (int)Result.Ok);
+                        }
+
+                        Activity
+                            .GetFragmentManager()
+                            .BeginTransaction()
+                            .Remove(this)
+                            .Commit();
+                    }
+                });
+
             Intent enableBluetooth = new Intent(BluetoothAdapter.ActionRequestEnable);
-            StartActivityForResult(enableBluetooth, ENABLE_BT_REQUEST);
+            _permissionLauncher.Launch(enableBluetooth);
         }
     }
 
-    public override void OnRequestPermissionsResult(
-        int requestCode, 
-        string[] permissions, 
-        [GeneratedEnum] Permission[] grantResults)
+    private void DealWithPermissionRequestResult(HashMap map)
     {
-        if (requestCode == PERMISSIONS_REQUEST)
-        {
-            _requestedPermissionResult?.Invoke(permissions, grantResults);
-        }
-        this.Activity.FragmentManager.BeginTransaction().Remove(this).Commit();
-    }
+        var set = map.KeySet();
 
-    public override void OnActivityResult(int requestCode, [GeneratedEnum] Result resultCode, Intent data)
-    {
-        base.OnActivityResult(requestCode, resultCode, data);
-        if (requestCode == ENABLE_BT_REQUEST)
+        string[] keys = new string[set.Count];
+        Permission[] permissions = new Permission[set.Count];
+        for (int i = 0; i < set.Count; i++) { permissions[i] = Permission.Denied; }
+
+        int index = 0;
+        foreach (string key in set)
         {
-            _enableBluetoothAdapterResult?.Invoke(resultCode == Result.Ok);
+            keys[index] = (string)key;
+            var granted = map.Get(key);
+            if (granted is Java.Lang.Boolean g)
+            {
+                permissions[index] = g == Java.Lang.Boolean.True ? Permission.Granted : Permission.Denied;
+            }
+            index++;
         }
-        this.Activity.FragmentManager.BeginTransaction().Remove(this).Commit();
+
+        _requestedPermissionResult?.Invoke(keys, permissions);
+    }
+}
+
+public class ResultCallback : Java.Lang.Object, IActivityResultCallback
+{
+    public Action<Java.Lang.Object> Completion { get; set; }
+
+    public void OnActivityResult(Java.Lang.Object p0)
+    {
+        Completion?.Invoke(p0);
     }
 }
