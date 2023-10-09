@@ -91,6 +91,8 @@ public partial class BluetoothService : NSObject, ICBCentralManagerDelegate
         CoreBluetooth.CBCentralManager central, 
         CoreBluetooth.CBPeripheral peripheral) 
     {
+        _centralManager.StopScan();
+
         OnDeviceConnected?.Invoke(this, new BluetoothDeviceConnectedArgs
         {
             Device = new BTDevice
