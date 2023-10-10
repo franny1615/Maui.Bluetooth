@@ -96,9 +96,9 @@ public partial class BluetoothService : NSObject, ICBCentralManagerDelegate
         OnDeviceConnected?.Invoke(this, new BluetoothDeviceConnectedArgs
         {
             Device = new BTDevice
-            {
-                Name = peripheral.Name,
-                OSObject = peripheral
+        {
+            Name = peripheral.Name,
+            OSObject = peripheral
             }
         });
     }

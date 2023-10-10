@@ -89,6 +89,7 @@ public class DevicePage : ContentPage, IQueryAttributable
 		_bluetoothService.OnDeviceConnected += DeviceConnected;
 		_bluetoothService.OnDeviceFailedToConnect += FailedToConnectDevice;
 		_bluetoothService.OnDeviceDisconnected += DeviceDisconnected;
+		_bluetoothService.Prepare();
     }
 
     private void ConnectButtonClicked(object sender, EventArgs e)
@@ -99,8 +100,8 @@ public class DevicePage : ContentPage, IQueryAttributable
 
 	private void DisconnectButtonClicked(object sender, EventArgs e)
 	{
-		_bluetoothService.Disconnect(_btDevice);
-		_connectionStatus.Text = "Disconnecting...";
+        _connectionStatus.Text = "Disconnecting...";
+        _bluetoothService.Disconnect(_btDevice);
 	}
 
     private void SendDataClicked(object sender, EventArgs e)

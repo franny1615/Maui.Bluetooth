@@ -16,6 +16,8 @@ public partial class BluetoothService
     private BluetoothManager _manager = null;
     private BluetoothAdapter _adapter = null;
 
+    private ConnectDeviceThread _connectThread = null;
+
     private Receiver _receiver;
 
     public partial void Prepare()
@@ -67,10 +69,53 @@ public partial class BluetoothService
 
     public partial void Connect(IBTDevice device)
     {
+        try
+        {
+            // purely cleanup
+            if (_connectThread != null)
+            {
+                _connectThread.Cancel();
+                _connectThread.Dispose();
+                _connectThread = null;
+            }
+        }
+        catch { }
+
+        try
+        {
+            _connectThread = new ConnectDeviceThread(_adapter, device, Platform.CurrentActivity);
+            _connectThread.OnDeviceConnected += OnDeviceConnected;
+            _connectThread.OnDeviceDisconnected += OnDeviceDisconnected;
+            _connectThread.OnDeviceConnectionFailure += OnDeviceFailedToConnect;
+            _connectThread.Run();
+        }
+        catch (Java.Lang.Exception ex) 
+        {
+            OnDeviceFailedToConnect?.Invoke(this, new BluetoothDeviceConnectionFailureArgs
+            {
+                Device = device,
+                ErrorMessage = ex.Message
+            });
+        }
     }
 
     public partial void Disconnect(IBTDevice device)
     {
+        try
+        {
+            _connectThread.Cancel();
+            _connectThread.OnDeviceConnected -= OnDeviceConnected;
+            _connectThread.OnDeviceDisconnected -= OnDeviceDisconnected;
+            _connectThread.OnDeviceConnectionFailure -= OnDeviceFailedToConnect;
+        }
+        catch (Java.Lang.Exception e)
+        {
+            OnDeviceFailedToConnect?.Invoke(this, new BluetoothDeviceConnectionFailureArgs
+            {
+                Device = device,
+                ErrorMessage = $"Disconnection failure: {e.Message}"
+            });
+        }
     }
 
     public partial void SearchForDevices()
@@ -185,6 +230,7 @@ public class Receiver : BroadcastReceiver
     }
 }
 
+#region Permissions
 public static class PermissionsRequester
 {
     public static void RequestPermissions(
@@ -318,3 +364,121 @@ public class ResultCallback : Java.Lang.Object, IActivityResultCallback
         Completion?.Invoke(p0);
     }
 }
+#endregion
+
+#region Connect Device
+public class ConnectDeviceThread : Java.Lang.Thread
+{
+    private Context _context;
+    private BluetoothSocket _socket;
+    private BluetoothGatt _gatt;
+
+    private BluetoothAdapter _bluetoothAdapter;
+    private IBTDevice _device;
+
+    public event EventHandler<BluetoothDeviceConnectionFailureArgs> OnDeviceConnectionFailure;
+    public event EventHandler<BluetoothDeviceConnectedArgs> OnDeviceConnected;  
+    public event EventHandler<BluetoothDeviceDisconnectedArgs> OnDeviceDisconnected;
+
+    public ConnectDeviceThread(BluetoothAdapter adapter, IBTDevice device, Context context)
+    {
+        _bluetoothAdapter = adapter;
+        _device = device;
+        _context = context;
+        try
+        {
+            BluetoothDevice dev = (BluetoothDevice)device.OSObject;
+            if (dev.Type == BluetoothDeviceType.Le)
+            {
+                _gatt = dev.ConnectGatt(_context, false, (BTDevice) device);
+                ((BTDevice)device).StateChanged += (s, e) =>
+                {
+                    if (e.State == BluetoothState.PoweredOn)
+                    {
+                        MainThread.BeginInvokeOnMainThread(() =>
+                        {
+                            OnDeviceConnected?.Invoke(this, new BluetoothDeviceConnectedArgs
+                            {
+                                Device = _device
+                            });
+                        });
+                    }
+                };
+            }
+            else
+            {
+                // TODO: maybe figure out connecting regular devices
+            }
+        }
+        catch (Java.Lang.Exception e)
+        {
+            OnDeviceConnectionFailure?.Invoke(this, new BluetoothDeviceConnectionFailureArgs
+            {
+                Device = _device,
+                ErrorMessage = e.Message
+            });
+        }
+    }
+
+    public override void Run()
+    {
+        base.Run();
+        _bluetoothAdapter.CancelDiscovery();
+
+        try
+        {
+            if (_socket != null)
+            {
+                _socket.Connect();
+                OnDeviceConnected?.Invoke(this, new BluetoothDeviceConnectedArgs
+                {
+                    Device = _device
+                });
+            }
+        }
+        catch (Java.Lang.Exception e)
+        {
+            OnDeviceConnectionFailure?.Invoke(this, new BluetoothDeviceConnectionFailureArgs
+            {
+                Device = _device,
+                ErrorMessage = e.Message    
+            });
+        }
+    }
+
+    public void Cancel()
+    {
+        try
+        {
+            if (_socket != null)
+            {
+                _socket.Close();
+                _socket = null;
+            }
+            else if (((BluetoothDevice) _device.OSObject).Type == BluetoothDeviceType.Le)
+            {
+                _gatt.Close();
+                _gatt = null;
+            }
+
+            MainThread.BeginInvokeOnMainThread(() =>
+            {
+                OnDeviceDisconnected?.Invoke(this, new BluetoothDeviceDisconnectedArgs
+                {
+                    Device = _device
+                });
+            });
+
+            this.Join();      
+        }
+        catch (Java.Lang.Exception e)
+        {
+            OnDeviceConnectionFailure?.Invoke(this, new BluetoothDeviceConnectionFailureArgs
+            {
+                Device = _device,
+                ErrorMessage = $"Disconnection failure {e.Message}"
+            });
+        }
+    }
+}
+#endregion
